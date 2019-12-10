@@ -63,7 +63,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: listener
+  name: hellolistener
 spec:
   triggers:
     - binding:
