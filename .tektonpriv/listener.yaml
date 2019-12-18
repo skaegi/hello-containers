@@ -42,7 +42,7 @@ metadata:
 spec:
     tasks:
     - name: priv
-        taskRef:
+      taskRef:
         name: priv-task
 ---
 apiVersion: tekton.dev/v1alpha1
