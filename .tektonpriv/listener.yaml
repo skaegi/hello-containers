@@ -1,0 +1,82 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: templatepriv
+spec:
+  params:
+    - name: dummy
+      default: prod
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1alpha1
+      kind: PipelineRun
+      metadata:
+        name: pipelinerun-$(uid)
+      spec:
+        pipelineRef:
+            name: pipelinepriv
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: bindingpriv
+spec:
+  params:
+    - name: dummy
+      value: "https://github.com/skaegi/hello-containers"
+---
+apiVersion: tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: listenerpriv
+spec:
+  triggers:
+    - binding:
+        name: bindingpriv
+      template:
+        name: templatepriv
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+    name: pipelinepriv
+spec:
+    tasks:
+    - name: priv
+        taskRef:
+        name: priv-task
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+    name: priv-task
+spec:    
+    steps:
+        - image: docker
+          name: client
+          script: |
+              #!/usr/bin/env bash
+              cat > Dockerfile << EOF
+              FROM ubuntu
+              RUN apt-get update
+              ENTRYPOINT ["echo", "hello"]
+              EOF
+              docker build -t hello . && docker run hello
+              docker images
+          volumeMounts:
+            - mountPath: /var/run/
+              name: dind-socket
+      sidecars:
+        - image: docker:18.05-dind
+          name: server
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /var/lib/docker
+              name: dind-storage
+            - mountPath: /var/run/
+              name: dind-socket
+      volumes:
+        - name: dind-storage
+          emptyDir: {}
+        - name: dind-socket
+          emptyDir: {}
