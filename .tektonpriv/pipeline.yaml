@@ -1,0 +1,10 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+    name: pipelinepriv
+spec:
+    tasks:
+    - name: priv
+        taskRef:
+            name: priv-task
