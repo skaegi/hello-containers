@@ -1,4 +1,4 @@
-#  Copyright 2019 IBM
+#  Copyright 2019,2020 IBM
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -13,14 +13,25 @@
 #   limitations under the License.
 
 FROM node:alpine
+LABEL maintainer="philippe_mulet@fr.ibm.com"
 
+# hadolint ignore=DL3017
 RUN apk update && apk upgrade
+
 # Install the application
-ADD package.json /app/package.json
-RUN cd /app && npm install
-ADD app.js /app/app.js
-ENV WEB_PORT 80
-EXPOSE  80
+COPY package.json /app/package.json
+COPY app.js /app/app.js
+WORKDIR /app
+RUN npm install
+
+# Support to for arbitrary UserIds
+# https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
+RUN chmod -R u+x /app && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app /etc/passwd
+
+ENV PORT 8080
+EXPOSE 8080
 
 # Vulnerability Advisor : Fix PASS_MAX_DAYS, PASS_MIN_DAYS and PASS_MIN_LEN, common-password
 # RUN mv -f /etc/login.defs /etc/login.defs.orig
@@ -32,4 +43,4 @@ EXPOSE  80
 # RUN dpkg --purge --force-all <package>
 
 # Define command to run the application when the container starts
-CMD ["node", "/app/app.js"]
+CMD ["node", "app.js"]
